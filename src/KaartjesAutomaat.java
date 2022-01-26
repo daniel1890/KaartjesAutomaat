@@ -6,14 +6,19 @@ import java.util.ArrayList;
 
 public class KaartjesAutomaat {
     // Klasses die nodig zijn
-    private PApplet app;
+    private final PApplet app;
+    private final DecimalFormat format;
+    private Bestelling huidigeBestelling;
 
     // Arrays/arraylists die nodig zijn
     private ArrayList<Film> films;
-    private double[] geldBedragen;
+    private final double[] geldBedragen;
     private ArrayList<Knop> filmKnoppen;
-    private ArrayList<Knop> betaalKnoppen;
+    private final ArrayList<Knop> betaalKnoppen;
+    private final ArrayList<Knop> aantalTicketKnoppen;
+    private ArrayList<Bestelling> bestellingen;
     private Knop terugKnop;
+
 
     // statische variabelen die bepaalde collecties optellen
     public static int aantalVerkochteKaartjes;
@@ -28,21 +33,21 @@ public class KaartjesAutomaat {
     private boolean filmIsGekozen;
     private boolean betalingVoldaan;
     private int indexHuidigeFilm;
+    private int aantalKaartjesInBestelling;
     private double openStaandBedrag;
     private double wisselGeld;
     private double scrollPositie;
-
-
-    // Hulpklasses
-    DecimalFormat format;
 
     public KaartjesAutomaat(PApplet app) {
         this.app = app;
         this.films = new ArrayList<>();
         this.filmKnoppen = new ArrayList<>();
         this.betaalKnoppen = new ArrayList<>();
+        this.aantalTicketKnoppen = new ArrayList<>();
+        this.bestellingen = new ArrayList<>();
         this.geldBedragen = new double[]{0.05, 0.10, 0.20, 0.50, 1.00, 2.00, 5.00, 10.00};
         this.openStaandBedrag = 0;
+        this.aantalKaartjesInBestelling = 1;
         this.scrollPositie = 0;
 
         opbrengst = 0;
@@ -80,6 +85,7 @@ public class KaartjesAutomaat {
         genereerFilmKnoppen();
         genereerBetaalKnoppen();
         genereerTerugKnop();
+        genereerAantalTicketKnoppen();
     }
 
     // Functies voor het tekenen van de verschillende schermen.
@@ -94,6 +100,7 @@ public class KaartjesAutomaat {
         tekenTekstBetaalScherm();
         tekenBetaalKnoppen();
         tekenTerugKnop();
+        tekenAantalTicketKnoppen();
     }
 
     private void tekenTicketScherm() {
@@ -111,6 +118,7 @@ public class KaartjesAutomaat {
     private void verwerkBetaalSchermInput() {
         verwerkBetaalKnoppenInput();
         verwerkTerugKnopInput();
+        verwerkAantalTicketKnoppenInput();
     }
 
     private void verwerkTicketSchermInput() {
@@ -119,11 +127,11 @@ public class KaartjesAutomaat {
 
     // Functies die knoppen genereren aan de hand van hoe gevuld de bijbehorende arraylists zijn
     private void genereerFilmKnoppen() {
-        float knopHoogte = app.height / 10;
-        float knopBreedte = app.width / 2;
-        float tussenRuimte = knopHoogte / 2;
-        float startX = (app.width / 2) - (knopBreedte / 2);
-        float startY = tussenRuimte + (tussenRuimte / 2);
+        float knopHoogte = app.height / 10f;
+        float knopBreedte = app.width / 2f;
+        float tussenRuimte = knopHoogte / 2f;
+        float startX = (app.width / 2f) - (knopBreedte / 2f);
+        float startY = tussenRuimte + (tussenRuimte / 2f);
 
         int index = 0;
         for (Film film : this.films) {
@@ -134,11 +142,11 @@ public class KaartjesAutomaat {
     }
 
     private void genereerBetaalKnoppen() {
-        float knopHoogte = app.height / 12;
-        float knopBreedte = app.width / 10;
+        float knopHoogte = app.height / 12f;
+        float knopBreedte = app.width / 10f;
         float tussenRuimte = (app.width - (geldBedragen.length * knopBreedte)) / geldBedragen.length;
-        float startX = tussenRuimte / 2;
-        float startY = (app.height / 5) * 4;
+        float startX = tussenRuimte / 2f;
+        float startY = (app.height / 5f) * 4f;
 
         int index = 0;
         for (double bedrag : geldBedragen) {
@@ -149,12 +157,27 @@ public class KaartjesAutomaat {
     }
 
     private void genereerTerugKnop() {
-        float knopHoogte = app.height / 11;
-        float knopBreedte = app.width / 5;
-        float startX = app.width - knopBreedte - 5;
-        float startY = app.height - knopHoogte - 5;
+        float knopHoogte = app.height / 11f;
+        float knopBreedte = app.width / 5f;
+        float startX = app.width - knopBreedte - 5f;
+        float startY = app.height - knopHoogte - 5f;
 
         this.terugKnop = new Knop(startX, startY, knopBreedte, knopHoogte, "Ga terug", 18);
+    }
+
+    private void genereerAantalTicketKnoppen() {
+        float knopHoogte = app.height / 12f;
+        float knopBreedte = app.width / 10f;
+        float startX = app.width / 2f + (app.width / 6f);
+        float startY = (100f + 40f * 5f) - (knopHoogte / 2f);
+        float tussenRuimte = knopBreedte;
+
+        String[] symbolen = {"<", ">"};
+
+        for (int i = 0; i < 2; i++) {
+            Knop knop = new Knop(startX + ((knopBreedte + tussenRuimte) * i), startY, knopBreedte, knopHoogte, symbolen[i], 28);
+            this.aantalTicketKnoppen.add(knop);
+        }
     }
 
     // Functies die de knoppen tekent aan de hand van hoe gevuld de bijbehorende arraylists zijn
@@ -166,6 +189,12 @@ public class KaartjesAutomaat {
 
     private void tekenBetaalKnoppen() {
         for (Knop knop : betaalKnoppen) {
+            knop.tekenKnop(app);
+        }
+    }
+
+    private void tekenAantalTicketKnoppen() {
+        for (Knop knop : aantalTicketKnoppen) {
             knop.tekenKnop(app);
         }
     }
@@ -198,6 +227,20 @@ public class KaartjesAutomaat {
         }
     }
 
+    private void verwerkAantalTicketKnoppenInput() {
+        for (Knop knop : aantalTicketKnoppen) {
+            knop.klikKnop(app);
+        }
+        // als de linker knop ingedrukt < is dan wordt aantal tickets verlaagt met 1 als minimum(1) niet bereikt is
+        if (aantalTicketKnoppen.get(0).isGeklikt() && this.aantalKaartjesInBestelling > 1) {
+            this.aantalKaartjesInBestelling -= 1;
+            setOpenStaandBedrag(this.openStaandBedrag - this.films.get(indexHuidigeFilm).getPrijs());
+        } else if (aantalTicketKnoppen.get(1).isGeklikt() && this.aantalKaartjesInBestelling < 100) {
+            this.aantalKaartjesInBestelling += 1;
+            setOpenStaandBedrag(this.openStaandBedrag + this.films.get(indexHuidigeFilm).getPrijs());
+        }
+    }
+
     public void verwerkMuisScroll(float e) {
         System.out.println(e);
         Knop filmknop = filmKnoppen.get(0);
@@ -211,7 +254,7 @@ public class KaartjesAutomaat {
         if (schermStatus == hoofdMenuScherm) {
             if (e == 1.0 && this.scrollPositie < scrollMax) {
                 for (Knop knop : filmKnoppen) {
-                    knop.setY(knop.getY() + -10);
+                    knop.setY(knop.getY() - 10);
                 }
                 this.scrollPositie += 10;
             } else if (e == -1.0 && this.scrollPositie > 0) {
@@ -231,10 +274,13 @@ public class KaartjesAutomaat {
             switch (schermStatus) {
                 // 0 = kiesfilmscherm, 1 = betaalscherm, 2 = ticketscherm
                 case 0 -> schermStatus = hoofdMenuScherm;
-                case 1 -> schermStatus = hoofdMenuScherm;
-                case 2 -> {
+                case 1 -> {
+                    resetStandNaAnnulering();
                     schermStatus = hoofdMenuScherm;
+                }
+                case 2 -> {
                     resetStandNaBetaling();
+                    schermStatus = hoofdMenuScherm;
                 }
             }
         }
@@ -246,17 +292,20 @@ public class KaartjesAutomaat {
         float tussenRuimte = tekstGrootte * 1.5f;
         app.textAlign(app.CENTER);
         app.textSize(tekstGrootte);
-        app.text("Geselecteerde film: " + this.films.get(indexHuidigeFilm).getNaam(), app.width / 2, 100);
-        app.text("Prijs van geselecteerde film: €" + this.films.get(indexHuidigeFilm).getPrijs(), app.width / 2, 100 + tussenRuimte);
-        app.text("Nog te betalen bedrag: €" + formatBedrag(this.openStaandBedrag), app.width / 2, 100 + tussenRuimte * 2);
+        app.text("Geselecteerde film: " + this.films.get(indexHuidigeFilm).getNaam(), app.width / 2f, 100);
+        app.text("Prijs van geselecteerde film: €" + formatBedrag(this.films.get(indexHuidigeFilm).getPrijs()), app.width / 2f, 100 + tussenRuimte);
+        app.text("Totaal bedrag van uw bestelling: €" + formatBedrag(this.films.get(indexHuidigeFilm).getPrijs() * aantalKaartjesInBestelling), app.width / 2f, 100f + tussenRuimte * 2f);
+        app.text("Nog te betalen bedrag: €" + formatBedrag(this.openStaandBedrag), app.width / 2f, 100f + tussenRuimte * 3f);
+        app.text("Aantal kaartjes in bestelling:", app.width / 2f - (app.width / 6f), 100f + tussenRuimte * 5f);
+        app.text(this.aantalKaartjesInBestelling, app.width / 2f + (app.width / 3.2f), 100f + tussenRuimte * 5f);
     }
 
     private void tekenTicket() {
         float kaartjeX1 = 0;
         float lijnBuffer = 5;
-        float kaartjeY1 = app.height / 4;
+        float kaartjeY1 = app.height / 4f;
         float kaartjeBreedte = app.width;
-        float kaartjeHoogte = app.height / 2;
+        float kaartjeHoogte = app.height / 2f;
         app.fill(255);
         app.textAlign(app.CENTER);
         app.textSize(22);
@@ -274,13 +323,13 @@ public class KaartjesAutomaat {
         app.textSize(18);
         app.stroke(0);
         app.fill(0);
-        app.text("U heeft gekozen voor de film: " + films.get(indexHuidigeFilm).getNaam(), app.width / 2, 275);
-        app.text("Uw ticketnummer is: " + aantalVerkochteKaartjes, app.width / 2, 325);
-        app.text("Uw filmcode is: " + films.get(indexHuidigeFilm).getIndex(), app.width / 2, 375);
-        app.text("De prijs van de film is: €" + formatBedrag(films.get(indexHuidigeFilm).getPrijs()), app.width / 2, 425);
-        app.text("U heeft betaald: €" + formatBedrag((films.get(indexHuidigeFilm).getPrijs() + wisselGeld)), app.width / 2, 475);
+        app.text("U heeft gekozen voor de film: " + films.get(indexHuidigeFilm).getNaam(), app.width / 2f, 275);
+        app.text("Uw ticketnummer is: " + aantalVerkochteKaartjes, app.width / 2f, 325);
+        app.text("Uw filmcode is: " + films.get(indexHuidigeFilm).getIndex(), app.width / 2f, 375);
+        app.text("De prijs van de film is: €" + formatBedrag(films.get(indexHuidigeFilm).getPrijs()), app.width / 2f, 425);
+        app.text("U heeft betaald: €" + formatBedrag((films.get(indexHuidigeFilm).getPrijs() + wisselGeld)), app.width / 2f, 475);
         if (wisselGeld > 0.00) {
-            app.text("Hier is uw wisselgeld: €" + formatBedrag(wisselGeld), app.width / 2, 525);
+            app.text("Hier is uw wisselgeld: €" + formatBedrag(wisselGeld), app.width / 2f, 525);
         }
     }
 
@@ -295,6 +344,20 @@ public class KaartjesAutomaat {
         }
     }
 
+    private void printTicket() {
+        System.out.println("#----------------------------------------------------------#");
+        System.out.println("U heeft gekozen voor de film: " + films.get(indexHuidigeFilm).getNaam());
+        System.out.println("De prijs van de film is: " + formatBedrag(films.get(indexHuidigeFilm).getPrijs()));
+        System.out.println("U heeft betaald: " + formatBedrag((films.get(indexHuidigeFilm).getPrijs() + wisselGeld)));
+        if (wisselGeld > 0.00) {
+            System.out.println("Hier is uw wisselgeld: " + formatBedrag(wisselGeld));
+        }
+        System.out.println("Uw ticketnummer is: " + aantalVerkochteKaartjes);
+        System.out.println("Uw filmcode is: " + aantalFilms);
+        System.out.println("#-----------------------------------------------------------#");
+    }
+
+    // Functies die functionaliteit geven aan de gebruiker in interactie met de films
     public void voegFilmToe(String naam, double prijs) {
         Film nieuweFilm = new Film(naam, prijs);
         nieuweFilm.setIndex(aantalFilms);
@@ -316,10 +379,16 @@ public class KaartjesAutomaat {
         this.indexHuidigeFilm = index;
         this.schermStatus = betaalScherm;
         this.betalingVoldaan = false;
-        openStaandBedrag = films.get(index).getPrijs();
+        //this.openStaandBedrag = films.get(index).getPrijs();
+        setOpenStaandBedrag(films.get(index).getPrijs());
         System.out.println("U heeft gekozen " + films.get(index).toString());
     }
 
+    private void setOpenStaandBedrag(double nieuwBedrag) {
+        this.openStaandBedrag = nieuwBedrag;
+    }
+
+    // Functies die betalingen verwerken
     public void werpGeldIn(int index) {
         openStaandBedrag -= geldBedragen[index];
         System.out.println("U heeft ingeworpen: " + formatBedrag(geldBedragen[index]));
@@ -334,28 +403,34 @@ public class KaartjesAutomaat {
 
         if (openStaandBedrag == 0.00) {
             betalingVoldaan = true;
+            verwerkBestelling();
             schermStatus = ticketScherm;
         }
     }
 
-    private void printTicket() {
-        System.out.println("#----------------------------------------------------------#");
-        System.out.println("U heeft gekozen voor de film: " + films.get(indexHuidigeFilm).getNaam());
-        System.out.println("De prijs van de film is: " + formatBedrag(films.get(indexHuidigeFilm).getPrijs()));
-        System.out.println("U heeft betaald: " + formatBedrag((films.get(indexHuidigeFilm).getPrijs() + wisselGeld)));
-        if (wisselGeld > 0.00) {
-            System.out.println("Hier is uw wisselgeld: " + formatBedrag(wisselGeld));
-        }
-        System.out.println("Uw ticketnummer is: " + aantalVerkochteKaartjes);
-        System.out.println("Uw filmcode is: " + aantalFilms);
-        System.out.println("#-----------------------------------------------------------#");
+    private void verwerkBestelling() {
+        Bestelling bestelling = new Bestelling(this.aantalKaartjesInBestelling, films.get(indexHuidigeFilm));
+        this.huidigeBestelling = bestelling;
+
+        // Voeg de bestelling toe aan de bestellingen array, hiermee kan in het admin scherm wat later gecreeerd wordt alle bestellingen ingezien worden door simpelweg in de bestellingen array te kijken
+        this.bestellingen.add(bestelling);
     }
 
     private void resetStandNaBetaling() {
-        aantalVerkochteKaartjes++;
+        aantalVerkochteKaartjes += this.aantalKaartjesInBestelling;
+        this.aantalKaartjesInBestelling = 1;
         this.wisselGeld = 0;
         this.filmIsGekozen = false;
         this.betalingVoldaan = false;
+        this.huidigeBestelling = null;
+    }
+
+    private void resetStandNaAnnulering() {
+        this.wisselGeld = 0;
+        this.aantalKaartjesInBestelling = 1;
+        this.filmIsGekozen = false;
+        this.betalingVoldaan = false;
+        this.huidigeBestelling = null;
     }
 
     private String formatBedrag(double bedrag) {
